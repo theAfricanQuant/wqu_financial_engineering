@@ -56,12 +56,11 @@ class EuropeanOption:
         N = len(x)
         if N == 1:
             return x
-        else:
-            ek = self.fft(x[:-1:2])
-            ok = self.fft(x[1::2])
-            m = np.array(range(int(N/2)))
-            okm = ok*np.exp(-1j*2*np.pi*m/N)
-            return np.concatenate((ek+okm, ek-okm))
+        ek = self.fft(x[:-1:2])
+        ok = self.fft(x[1::2])
+        m = np.array(range(N // 2))
+        okm = ok*np.exp(-1j*2*np.pi*m/N)
+        return np.concatenate((ek+okm, ek-okm))
 
     def c_func(self, v, alpha, log_strike):
         val1 = np.exp(-self.risk_free_rate*self.maturity) * \
@@ -77,10 +76,10 @@ class EuropeanOption:
             return 2*strike_price*(self.psi_n(b2, b1, 0, b1, n) - self.upsilon_n(b2, b1, 0, b1, n))/(b2-b1)
 
     def logchar_func(self, u, initial_stock_price, risk_free_rate, sigma, strike_price, maturity, type):
-        if type == 'fft':
-            return np.exp(1j*u*(np.log(initial_stock_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
-        elif type == 'cos':
+        if type == 'cos':
             return np.exp(1j*u*(np.log(initial_stock_price/strike_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
+        elif type == 'fft':
+            return np.exp(1j*u*(np.log(initial_stock_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
 
     # Fourier charateristic function
     def c_M1(self, t):

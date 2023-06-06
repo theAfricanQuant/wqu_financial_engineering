@@ -28,10 +28,7 @@ def a_path(S, r, sigma, Z, dT):
 
 
 def UpOutCall(p, K, L, r, T):
-    if max(p) > L:
-        return 0
-    else:
-        return max(0, p[-1]-K)*np.exp(-r*T)
+    return 0 if max(p) > L else max(0, p[-1]-K)*np.exp(-r*T)
 
 
 np.random.seed(10)

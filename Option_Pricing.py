@@ -64,12 +64,11 @@ class EuropeanOption:
         N = len(x)
         if N == 1:
             return x
-        else:
-            ek = self.fft(x[:-1:2])
-            ok = self.fft(x[1::2])
-            m = np.array(range(int(N/2)))
-            okm = ok*np.exp(-1j*2*np.pi*m/N)
-            return np.concatenate((ek+okm, ek-okm))
+        ek = self.fft(x[:-1:2])
+        ok = self.fft(x[1::2])
+        m = np.array(range(N // 2))
+        okm = ok*np.exp(-1j*2*np.pi*m/N)
+        return np.concatenate((ek+okm, ek-okm))
 
     def c_func(self, v, alpha, log_strike):
         val1 = np.exp(-self.risk_free_rate*self.maturity) * \
@@ -88,10 +87,10 @@ class EuropeanOption:
             return 2*strike_price*(self.psi_n(b2, b1, 0, b1, n) - self.upsilon_n(b2, b1, 0, b1, n))/(b2-b1)
 
     def logchar_func(self, u, initial_stock_price, risk_free_rate, sigma, strike_price, maturity, type):
-        if type == 'fft':
-            return np.exp(1j*u*(np.log(initial_stock_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
-        elif type == 'cos':
+        if type == 'cos':
             return np.exp(1j*u*(np.log(initial_stock_price/strike_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
+        elif type == 'fft':
+            return np.exp(1j*u*(np.log(initial_stock_price)+(risk_free_rate-sigma**2/2)*maturity)-(sigma**2)*maturity*(u**2)/2)
 
     # Fourier charateristic function
     def c_M1(self, t):
@@ -225,7 +224,7 @@ class Barrier_Option(EuropeanOption):
             terminal_stock_prices = [self.initial_stock_price]*sample_size
             correlation = corr_tested[i-1]
 
-            if correlation == -1 or correlation == 1:
+            if correlation in [-1, 1]:
                 norm_vec_0 = norm.rvs(size=sample_size)
                 norm_vec_1 = correlation*norm_vec_0
                 corr_norm_matrix = np.array([norm_vec_0, norm_vec_1])
@@ -246,14 +245,14 @@ class Barrier_Option(EuropeanOption):
             term_firm_val = super()._Vanila_Option__terminalStockPrice(firm_initial_value,
                                                                        self.risk_free_rate, firm_sigma, corr_norm_matrix[1, ], self.maturity)
             amount_lost = np.exp(-self.risk_free_rate*self.maturity) * \
-                (term_firm_val < firm_debt) * \
-                option_value_array*(1 - recovery_rate)
+                    (term_firm_val < firm_debt) * \
+                    option_value_array*(1 - recovery_rate)
             cva_estimates[i-1] = np.mean(amount_lost)
             cva_std[i-1] = np.std(amount_lost)/np.sqrt(sample_size)
             # option_mean_MC[i-1] = np.mean(option_value_array) - cva_estimates[i-1]
             option_mean_MC[i-1] = np.mean(option_value_array)
             option_std_MC[i-1] = np.std(option_value_array) / \
-                np.sqrt(option_value_array.size)
+                    np.sqrt(option_value_array.size)
 
         return (option_mean_MC, option_std_MC, cva_estimates, cva_std)
 
